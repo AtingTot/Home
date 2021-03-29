@@ -1,11 +1,5 @@
-// import 'dart:ui';
-
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
-
-import 'dart:ui' as ui show window;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -186,13 +180,15 @@ class _SMSLoginPageState extends State<SMSLoginPage> {
               onPressed: () {
                 print("我点击了");
               },
-              //通过控制Text的边距来控制控件的高度
-              child: Padding(padding: EdgeInsets.only(top: 12.0, bottom: 12.0),
-                child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
-              ),
+              child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
+              // //通过控制Text的边距来控制控件的高度
+              // child: Padding(padding: EdgeInsets.only(top: 12.0, bottom: 12.0),
+              //   child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
+              // ),
               style: ButtonStyle(
-                minimumSize: MaterialStateProperty.all(Size(MediaQuery.of(context).size.width, 48)),
-                // tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                minimumSize: MaterialStateProperty.all(
+                  Size(MediaQuery.of(context).size.width, 48)
+                ),
                 shape: MaterialStateProperty.all(StadiumBorder()),
                 backgroundColor: MaterialStateProperty.all(Colors.blue),
                 foregroundColor: MaterialStateProperty.all(Colors.white),
