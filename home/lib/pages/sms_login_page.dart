@@ -1,6 +1,15 @@
 // import 'dart:ui';
 
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'dart:ui' as ui show window;
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class SMSLoginPage extends StatefulWidget {
   @override
@@ -16,6 +25,11 @@ class _SMSLoginPageState extends State<SMSLoginPage> {
   bool _canClearPhone = false;
   bool _canClearCode = false;
   bool _isClickGetCode = false;
+
+  Duration _time;
+  var _seconds = 60;
+  Timer _countdownTimer = null;
+  String codeBtnTip = "获取验证码";
 
   // @override
   // Map<ChangeNotifier, List<VoidCallback>> changeNotifier() {
@@ -49,7 +63,14 @@ class _SMSLoginPageState extends State<SMSLoginPage> {
   //   Toast.show('去登录......');
   // }
 
-    @override
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -60,6 +81,7 @@ class _SMSLoginPageState extends State<SMSLoginPage> {
         title: Text("欢迎登录智慧家"),
       ),
       body: Container(
+        // height: 360,
         padding: EdgeInsets.only(left:20, right: 20, top: 60),
         child: Column(
           children: <Widget> [
@@ -124,111 +146,194 @@ class _SMSLoginPageState extends State<SMSLoginPage> {
                   ),
                 ),
                 ElevatedButton(
-                  child: Text('获取验证码', style: TextStyle(fontSize: 12,),),
-                  onPressed: null,
+                  child: Text(codeBtnTip, style: TextStyle(fontSize: 12,),),
+                  onPressed: () {
+                    Fluttertoast.showToast(msg: '短信验证码已发送，请注意查收');
+                    getVerificationCode();
+                    print("begin get code");
+                    if (_countdownTimer != null) {
+                      return;
+                    }
+                    _isClickGetCode = true;
+                    _seconds = 60;
+                    setState(() {
+                      codeBtnTip = "$_seconds秒";
+                      _seconds--;
+                    });
+                    _countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+                      setState(() {
+                        codeBtnTip = "$_seconds秒";
+                        if (_seconds > 0) {
+                          _seconds--;
+                        } else {
+                          _countdownTimer.cancel();
+                          _countdownTimer = null;
+                          codeBtnTip = "重新获取";
+                        }
+                      });
+                    });
+                  },
                   style: ButtonStyle(
                     shape: MaterialStateProperty.all(StadiumBorder()),
                     backgroundColor: MaterialStateProperty.all(Colors.blue),
                     foregroundColor: MaterialStateProperty.all(Colors.white),
                   ),
                 ),
-                // TextButton(
-                //   onPressed: null,
-                //   child: Text('获取验证码'),
-                // ),
               ],
             ),
             Padding(padding: EdgeInsets.only(top: 20)),
-            // Padding(
-            //   padding: EdgeInsets.only(top: 10, bottom: 10, right: 10, left: 10),
-            //   child: ElevatedButton(
-            //     onPressed: null,
-            //     child: Padding(padding: EdgeInsets.only(top: 12.0, bottom: 12.0),
-            //       child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
-            //     ),
-            //     style: ButtonStyle(
-            //       // alignment: const Alignment(10.0, 10.0),
-            //       // padding: MaterialStateProperty.all(EdgeInsets.only(top: 30, bottom: 30)),
-            //       // side: MaterialStateProperty.all(BorderSide(color: Colors.grey, width: 1)),
-            //       //外边框装饰 会覆盖 side 配置的样式
-            //       shape: MaterialStateProperty.all(StadiumBorder()),
-            //       // minimumSize: MaterialStateProperty.all(Size()),
-            //       // tapTargetSize: MaterialTapTargetSize.padded,
-            //       backgroundColor: MaterialStateProperty.all(Colors.blue),
-            //       foregroundColor: MaterialStateProperty.all(Colors.white),
-            //     ),
-            //   ),
-            // ),
-            // ElevatedButton(
-            //   onPressed: null,
-            //   child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
-            //   style: ButtonStyle(
-            //     // alignment: const Alignment(10.0, 10.0),
-            //     // padding: MaterialStateProperty.all(EdgeInsets.only(top: 30, bottom: 30)),
-            //     // side: MaterialStateProperty.all(BorderSide(color: Colors.grey, width: 1)),
-            //     //外边框装饰 会覆盖 side 配置的样式
-            //     shape: MaterialStateProperty.all(StadiumBorder()),
-            //     // minimumSize: MaterialStateProperty.all(Size()),
-            //     // tapTargetSize: MaterialTapTargetSize.padded,
-            //     backgroundColor: MaterialStateProperty.all(Colors.blue),
-            //     foregroundColor: MaterialStateProperty.all(Colors.white),
-            //   ),
-            // ),
-            Row(children: <Widget> [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    print("我点击了");
-                  },
-                  //通过控制Text的边距来控制控件的高度
-                  child: Padding(padding: EdgeInsets.only(top: 12.0, bottom: 12.0),
-                    child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
-                  ),
-                  style: ButtonStyle(
-                    // alignment: const Alignment(10.0, 10.0),
-                    // padding: MaterialStateProperty.all(EdgeInsets.only(top: 30, bottom: 30)),
-                    // side: MaterialStateProperty.all(BorderSide(color: Colors.grey, width: 1)),
-                    //外边框装饰 会覆盖 side 配置的样式
-                    shape: MaterialStateProperty.all(StadiumBorder()),
-                    // minimumSize: MaterialStateProperty.all(Size()),
-                    // tapTargetSize: MaterialTapTargetSize.padded,
-                    backgroundColor: MaterialStateProperty.all(Colors.blue),
-                    foregroundColor: MaterialStateProperty.all(Colors.white),
-                  ),
-                ),
+            ElevatedButton(
+              onPressed: () {
+                print("我点击了");
+              },
+              //通过控制Text的边距来控制控件的高度
+              child: Padding(padding: EdgeInsets.only(top: 12.0, bottom: 12.0),
+                child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
               ),
-            ],),
-          //   Padding(padding: EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 20.0),
-          //     child: Row(
-          //       children: <Widget> [
-          //         Expanded(
-          //           child: ElevatedButton(
-          //             onPressed: () {
-          //               print("我点击了");
-          //             },
-          //             //通过控制Text的边距来控制控件的高度
-          //             child: Padding(padding: EdgeInsets.only(top: 12.0, bottom: 12.0),
-          //               child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
-          //             ),
-          //             style: ButtonStyle(
-          //               // alignment: const Alignment(10.0, 10.0),
-          //               // padding: MaterialStateProperty.all(EdgeInsets.only(top: 30, bottom: 30)),
-          //               // side: MaterialStateProperty.all(BorderSide(color: Colors.grey, width: 1)),
-          //               //外边框装饰 会覆盖 side 配置的样式
-          //               shape: MaterialStateProperty.all(StadiumBorder()),
-          //               // minimumSize: MaterialStateProperty.all(Size()),
-          //               // tapTargetSize: MaterialTapTargetSize.padded,
-          //               backgroundColor: MaterialStateProperty.all(Colors.blue),
-          //               foregroundColor: MaterialStateProperty.all(Colors.white),
-          //             ),
-          //           ),
-          //         ),
-          //       ],
-          //     ),
-          //   ),
+              style: ButtonStyle(
+                minimumSize: MaterialStateProperty.all(Size(MediaQuery.of(context).size.width, 48)),
+                // tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: MaterialStateProperty.all(StadiumBorder()),
+                backgroundColor: MaterialStateProperty.all(Colors.blue),
+                foregroundColor: MaterialStateProperty.all(Colors.white),
+              ),
+            ),
+            // Row(children: <Widget> [
+            //   Expanded(
+            //     child: ElevatedButton(
+            //       onPressed: () {
+            //         print("我点击了");
+            //       },
+            //       //通过控制Text的边距来控制控件的高度
+            //       child: Padding(padding: EdgeInsets.only(top: 12.0, bottom: 12.0),
+            //         child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
+            //       ),
+            //       style: ButtonStyle(
+            //         shape: MaterialStateProperty.all(StadiumBorder()),
+            //         backgroundColor: MaterialStateProperty.all(Colors.blue),
+            //         foregroundColor: MaterialStateProperty.all(Colors.white),
+            //       ),
+            //     ),
+            //   ),
+            // ],),
+            // ConstrainedBox(
+            //   constraints: BoxConstraints(
+            //     // maxHeight: 60,
+            //     maxHeight: MediaQuery.of(context).size.width,
+            //     maxWidth: double.maxFinite,
+            //   ),
+            //   child: ElevatedButton(
+            //     child: Padding(
+            //       padding: EdgeInsets.only(top:12,bottom:12),
+            //       child: Text("注册/登录1", style: TextStyle(fontSize: 18,),),
+            //     ),
+            //     onPressed: () => print("width = ${MediaQuery.of(context).size.width}"),
+            //     style: ButtonStyle(
+            //       minimumSize: MaterialStateProperty.all(Size(MediaQuery.of(context).size.width,60)),
+            //       // tapTargetSize: ,
+            //       // backgroundColor: MaterialStateProperty.all(Colors.black),
+            //       // padding: MaterialStateProperty.all(EdgeInsets.only(left: MediaQuery.of(context).size.width/2, right: MediaQuery.of(context).size.width/2)),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),
     );
   }
+
+  //重新发送验证码
+  getVerificationCode() async {
+    // setState(() {
+    //   this.sendCodeBtn = false;
+    //   this.seconds = 10;
+    //   this._showTimer();
+    // });
+    // Dio().post("***"
+    //   "username":"***",
+    //   "password":"***",
+    //   "grant_type":"password"
+    //   options: Options(
+    //   headers: {"Authorization":basicAuth},
+    //   contentType: ContentType.parse("application/x-www-form-urlencoded"),
+    // )).then((response){
+    //   print(response.data);
+    // });
+    // String var1 = await getAccessTokenLocal();
+    // print(var1);
+    var api = 'https://taccount.haier.com/v2/sms-verification-code/send';
+    await Dio().post(api,
+      data: {
+        "phone_number": "13717993069",
+        "scenario": "login",
+        // "captcha_token":"8d505749-3c26-49a1-b344-6def60164948",
+        // "captcha_answer":"3p5wg"
+      },
+      options: Options(
+        headers: {"Authorization": "Bearer 063d10fc5b32434faa9761a0196bd6a0"},
+        contentType: "application/json"
+      ),
+    ).then((value) => print(value.data));
+    // Options option = Options(method:'post');
+    // // option.contentType
+    // Dio().
+    
+    // var response = await Dio().post(api, data: {"tel": this.tel});
+    // if (response.data["success"]) {
+    //   print(response); //演示期间服务器直接返回  给手机发送的验证码
+    // }
+  }
+
+  // //验证验证码
+  // validateCode() async {
+  //   var api = '${Config.domain}api/validateCode';
+  //   var response =
+  //   await Dio().post(api, data: {"tel": this.tel, "code": this.code});
+  //   if (response.data["success"]) {
+  //     Navigator.pushNamed(context, '/registerThird',arguments: {
+  //       "tel":this.tel,
+  //       "code":this.code
+  //     });
+  //   } else {
+  //     Fluttertoast.showToast(
+  //       msg: '${response.data["message"]}',
+  //       toastLength: Toast.LENGTH_SHORT,
+  //       gravity: ToastGravity.CENTER,
+  //     );
+  //   }
+  // }
+
+
+
+  Future<String> getAccessTokenLocal() async{
+
+  Map<String, dynamic> body = Map();//body
+  body["client_id"] = "upluszhushou";
+  body["client_secret"] = "VsUzcjyUDAEMaV";
+  body["grant_type"] = "client_credentials";
+
+  Dio dio = Dio();
+  Response response;
+  try{
+    response = await dio.post(
+      "https://taccount.haier.com/" + "/oauth/token",
+      data: body,
+      options: Options(
+        contentType: "application/x-www-form-urlencoded"
+      )
+    );
+    var  resp = json.encode(response.data);
+    return resp;
+  }on DioError catch (e){
+    if(e.response != null) {
+      return json.encode(e.response.data);
+    } else{
+      // Something happened in setting up or sending the request that triggered an Error
+      String estr = e.message;
+      String excetionstr = '{"error": "$estr"}';
+      return excetionstr;
+    }
+  }
+}
+
 }

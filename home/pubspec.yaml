@@ -31,6 +31,7 @@ dependencies:
   dio: 3.0.10
   # qr_flutter: 3.2.0
   # qrcode: 1.0.4
+  fluttertoast: ^7.1.8
 
 # base_library:
 #   path: ../base_library/
