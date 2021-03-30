@@ -31,10 +31,14 @@ dependencies:
   dio: 3.0.10
   # qr_flutter: 3.2.0
   # qrcode: 1.0.4
-  fluttertoast: ^7.1.8
-
-# base_library:
-#   path: ../base_library/
+  fluttertoast: ^8.0.3
+  # provider: ^5.0.0 # A wrapper around InheritedWidget to make them easier to use and more reusable.
+  # url_launcher: ^6.0.3 # Flutter plugin for launching a URL. Supports web, phone, SMS, and email schemes.
+  # flutter_bloc: ^7.0.0 # Flutter Widgets that make it easy to implement the BLoC (Business Logic Component) design pattern.
+  # video_player: ^2.1.0 # Flutter plugin for displaying inline video with other Flutter widgets on Android, iOS, and web.
+  # location: ^4.1.1 # A Flutter plugin to easily handle realtime location in iOS and Android.
+  shared_preferences: ^2.0.5 # Flutter plugin for reading and writing simple key-value pairs.
+  # sqflite: ^2.0.0+3 #Flutter plugin for SQLite, a self-contained, high-reliability, embedded, SQL database engine.
 
 dev_dependencies:
   flutter_test:

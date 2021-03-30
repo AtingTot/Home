@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SMSLoginPage extends StatefulWidget {
   @override
@@ -11,6 +13,8 @@ class SMSLoginPage extends StatefulWidget {
 }
 
 class _SMSLoginPageState extends State<SMSLoginPage> {
+
+  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
@@ -118,7 +122,7 @@ class _SMSLoginPageState extends State<SMSLoginPage> {
                 // hintText: '请输入验证码',
                 labelText: '请输入验证码',
                 icon: Icon(Icons.sms),
-                suffixIconConstraints:  BoxConstraints(maxHeight: 32),
+                // suffixIconConstraints: BoxConstraints(maxHeight: 32),
                 suffixIcon: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -134,7 +138,8 @@ class _SMSLoginPageState extends State<SMSLoginPage> {
                     ElevatedButton(
                       onPressed: () {
                         Fluttertoast.showToast(msg: '短信验证码已发送，请注意查收');
-                        getVerificationCode();
+                        getAccessTokenLocal();
+                        // getVerificationCode();
                         print("begin get code");
                         if (_countdownTimer != null) {
                           return;
@@ -172,57 +177,31 @@ class _SMSLoginPageState extends State<SMSLoginPage> {
               ),
             ),
             Padding(padding: EdgeInsets.only(top: 20)),
+            MaterialButton(
+              color: Colors.blue,
+              textColor: Colors.white,
+              shape: StadiumBorder(),
+              // padding: EdgeInsets.only(top:6, bottom:6),
+              height: 48,
+              minWidth: MediaQuery.of(context).size.width,
+              child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
+              onPressed: () {
+                print("object");
+              },
+            ),
+            Padding(padding: EdgeInsets.only(top: 20)),
             ElevatedButton(
               onPressed: () {
                 print("我点击了");
               },
               child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
               style: ButtonStyle(
-                // minimumSize: MaterialStateProperty.all(Size(MainAxisSize.min, 48)),
                 minimumSize: MaterialStateProperty.all(Size(MediaQuery.of(context).size.width, 48)),
                 shape: MaterialStateProperty.all(StadiumBorder()),
                 backgroundColor: MaterialStateProperty.all(Colors.blue),
                 foregroundColor: MaterialStateProperty.all(Colors.white),
               ),
             ),
-            // Row(children: <Widget> [
-            //   Expanded(
-            //     child: ElevatedButton(
-            //       onPressed: () {
-            //         print("我点击了");
-            //       },
-            //       //通过控制Text的边距来控制控件的高度
-            //       child: Padding(padding: EdgeInsets.only(top: 12.0, bottom: 12.0),
-            //         child: Text("注册/登录", style: TextStyle(fontSize: 18,),),
-            //       ),
-            //       style: ButtonStyle(
-            //         shape: MaterialStateProperty.all(StadiumBorder()),
-            //         backgroundColor: MaterialStateProperty.all(Colors.blue),
-            //         foregroundColor: MaterialStateProperty.all(Colors.white),
-            //       ),
-            //     ),
-            //   ),
-            // ],),
-            // ConstrainedBox(
-            //   constraints: BoxConstraints(
-            //     // maxHeight: 60,
-            //     maxHeight: MediaQuery.of(context).size.width,
-            //     maxWidth: double.maxFinite,
-            //   ),
-            //   child: ElevatedButton(
-            //     child: Padding(
-            //       padding: EdgeInsets.only(top:12,bottom:12),
-            //       child: Text("注册/登录1", style: TextStyle(fontSize: 18,),),
-            //     ),
-            //     onPressed: () => print("width = ${MediaQuery.of(context).size.width}"),
-            //     style: ButtonStyle(
-            //       minimumSize: MaterialStateProperty.all(Size(MediaQuery.of(context).size.width,48)),
-            //       // tapTargetSize: ,
-            //       // backgroundColor: MaterialStateProperty.all(Colors.black),
-            //       // padding: MaterialStateProperty.all(EdgeInsets.only(left: MediaQuery.of(context).size.width/2, right: MediaQuery.of(context).size.width/2)),
-            //     ),
-            //   ),
-            // ),
           ],
         ),
       ),
@@ -231,23 +210,6 @@ class _SMSLoginPageState extends State<SMSLoginPage> {
 
   //重新发送验证码
   getVerificationCode() async {
-    // setState(() {
-    //   this.sendCodeBtn = false;
-    //   this.seconds = 10;
-    //   this._showTimer();
-    // });
-    // Dio().post("***"
-    //   "username":"***",
-    //   "password":"***",
-    //   "grant_type":"password"
-    //   options: Options(
-    //   headers: {"Authorization":basicAuth},
-    //   contentType: ContentType.parse("application/x-www-form-urlencoded"),
-    // )).then((response){
-    //   print(response.data);
-    // });
-    // String var1 = await getAccessTokenLocal();
-    // print(var1);
     var api = 'https://taccount.haier.com/v2/sms-verification-code/send';
     await Dio().post(api,
       data: {
@@ -292,35 +254,56 @@ class _SMSLoginPageState extends State<SMSLoginPage> {
 
 
 
-  Future<String> getAccessTokenLocal() async{
+  Future<String> getAccessTokenLocal() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String token = prefs.getString("accessToken") ?? "";
+    if (token.isNotEmpty) return token;
+    
+    // await Dio().post(
+    //   "https://taccount.haier.com/" + "/oauth/token",
+    //   data: {
+    //     "client_id":"upluszhushou",
+    //     "client_secret": "VsUzcjyUDAEMaV",
+    //     "grant_type": "client_credentials"
+    //   },
+    //   options: Options(
+    //     contentType: "application/x-www-form-urlencoded"
+    //   )
+    // ).then((value) {
+    //   int now = Timeline.now;
+    //   json.encode(value.data);
+    // }).onError((error, stackTrace) {
+    //   print("error: $error\nstackTrace: $stackTrace");
+    // }).catchError((error) {
+    //   print("onError: $error");
+    // });
 
-  Map<String, dynamic> body = Map();//body
-  body["client_id"] = "upluszhushou";
-  body["client_secret"] = "VsUzcjyUDAEMaV";
-  body["grant_type"] = "client_credentials";
-
-  Dio dio = Dio();
-  Response response;
-  try{
-    response = await dio.post(
-      "https://taccount.haier.com/" + "/oauth/token",
-      data: body,
-      options: Options(
-        contentType: "application/x-www-form-urlencoded"
-      )
-    );
-    var  resp = json.encode(response.data);
-    return resp;
-  }on DioError catch (e){
-    if(e.response != null) {
-      return json.encode(e.response.data);
-    } else{
-      // Something happened in setting up or sending the request that triggered an Error
-      String estr = e.message;
-      String excetionstr = '{"error": "$estr"}';
-      return excetionstr;
+    Dio dio = Dio();
+    Response response;
+    try {
+      response = await dio.post(
+        "https://taccount.haier.com/" + "/oauth/token",
+        data: {
+          "client_id":"upluszhushou",
+          "client_secret": "VsUzcjyUDAEMaV",
+          "grant_type": "client_credentials"
+        },
+        options: Options(
+          contentType: "application/x-www-form-urlencoded"
+        )
+      );
+      var resp = json.encode(response.data);
+      return resp;
+    } on DioError catch (e) {
+      if (e.response != null) {
+        return json.encode(e.response.data);
+      } else {
+        // Something happened in setting up or sending the request that triggered an Error
+        String estr = e.message;
+        String excetionstr = '{"error": "$estr"}';
+        return excetionstr;
+      }
     }
   }
-}
 
 }
